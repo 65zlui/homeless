@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <link rel="stylesheet" href="/css/font.css">
+    <link rel="stylesheet" href="/css/xadmin.css">
+    <script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+    <script src="/lib/layui/layui.js" charset="utf-8"></script>
+    <script type="text/javascript" src="/js/xadmin.js"></script>
+</head>
+<body class="login-bg">
+
+<!--    <h1>用户登录</h1>
+&lt;!&ndash;    表单登录&ndash;&gt;
+    <form action="/login/loginForm">
+        <label>用户名：</label>
+        <input type="text" name="userName">
+        <label>密码：</label>
+        <input type="password" name="userPwd">
+        <input type="submit" value="登录">
+        <span th:text="${info}" style="color: red"></span>
+    </form>-->
+
+    <div class="login">
+        <div class="message">用户登录</div>
+        <div id="darkbannerwrap"></div>
+
+        <form method="post" class="layui-form" id="userForm">
+            <input name="userName" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" >
+            <hr class="hr15">
+            <input name="userPwd" lay-verify="required" placeholder="密码"  type="password" class="layui-input">
+            <hr class="hr15">
+            <button class="layui-btn layui-btn-normal" type="submit" lay-submit lay-filter="login">登录</button>
+            <a href="/register/registerPage" class="layui-btn layui-btn-normal">注册</a>
+            <button class="layui-btn layui-btn-normal" type="button" onclick="ddd(1)">邮箱登录</button>
+            <span id="info" style="color: violet"></span>
+        </form>
+
+        <form method="post" class="layui-form" style="display: none" id="emailForm">
+            <input name="email" id="email" placeholder="输入邮箱"  type="text" lay-verify="email" class="layui-input" >
+            <hr class="hr15">
+            <input name="code" id="code" placeholder="输入验证码"  type="password" class="layui-input">
+            <button class="layui-btn layui-btn-normal" type="submit" lay-submit lay-filter="sendCode">发送验证码</button>
+            <hr class="hr15">
+            <button class="layui-btn layui-btn-normal" type="submit" lay-submit lay-filter="emailLogin">登录</button>
+            <a href="/register/registerPage" class="layui-btn layui-btn-normal">注册</a>
+            <button class="layui-btn layui-btn-normal" type="button" onclick="ddd(0)">用户登录</button>
+            <span id="e" style="color: violet"></span>
+        </form>
+    </div>
+
+
+<!--    <h1 style="color: aqua">ajax邮箱登录</h1>
+    <table>
+        <tr>
+            <td><label>邮箱：</label></td>
+            <td><input type="text" name="email" id="email"></td>
+        </tr>
+        <tr>
+            <td><label>验证码：</label></td>
+            <td><input type="text" name="code" id="code"></td>
+        </tr>
+        <tr>
+            <td><input type="button" value="发送验证码" onclick="sendCode()"></td>
+        </tr>
+        <tr>
+            <td><input type="button" value="ajax邮箱登录" onclick="emailLogin()"></td>
+        </tr>
+        <tr>
+            <td><span id="info2" style="color: violet"></span></td>
+        </tr>
+    </table>-->
+</body>
+</html>
+<script>
+    //邮箱登录、用户登录表单切换
+    function ddd(num){
+        if(num==1){
+            //显示邮箱登录表单
+            $("#emailForm").show();
+            $("#userForm").hide();
+            //更改标题
+            $(".message").text("邮箱登录")
+        }else {
+            $("#emailForm").hide();
+            $("#userForm").show();
+            //更改标题
+            $(".message").text("用户登录")
+        }
+    }
+
+    $(function  () {
+        layui.use('form', function(){
+            var form = layui.form;
+            //登录
+            form.on('submit(login)', function(data){
+                console.log(data)
+                $.ajax({
+                    url:"/login/loginAjax",
+                    type:"post",
+                    data:data.field,
+                    dataType:"json",//返回的数据类型
+                    success:function (data) {
+                        $("#info").text(data.info)
+                        if(data.info=="登录成功！"){
+                             window.location.href="/index"
+                        }
+                    }
+                })
+                return false;
+            });
+            //发送验证码
+            form.on('submit(sendCode)', function(data){
+                console.log(data)
+                $.ajax({
+                    url:"/login/sendEmail",
+                    type:"post",
+                    data:data.field,
+                    dataType:"json",//返回的数据类型
+                    success:function (data) {
+                        $("#e").text(data.info)
+                    }
+                })
+                return false;
+            });
+            //邮件登录
+            form.on('submit(emailLogin)', function(data){
+                console.log(data)
+
+                //验证验证码是否为空
+                if(data.field.code==""){
+                    layer.alert("验证码不能为空")
+                    return false;
+                }
+                $.ajax({
+                    url:"/login/emailLogin",
+                    type:"post",
+                    data:data.field,
+                    dataType:"json",//返回的数据类型
+                    success:function (data) {
+                        $("#e").text(data.info)
+                        if(data.info=="登录成功！"){
+                            window.location.href="/index"
+                        }
+                    }
+                })
+                return false;
+            });
+        });
+    })
+
+    //登陆函数
+    function login() {
+        //获取用户输入
+        var name = $("#userName").val()
+        var pwd = $("#userPwd").val()
+        //发送ajax请求
+        $.ajax({
+            url:"/login/loginAjax",
+            type:"post",
+            data:{"userName":name,"userPwd":pwd},
+            dataType:"json",//返回的数据类型
+            success:function (data) {
+                $("#info").text(data.info);
+            }
+        })
+    }
+
+    //发送验证码
+    function sendCode() {
+        //获取用户输入
+        var email = $("#email").val()
+        //发送ajax请求
+        $.ajax({
+            url:"/login/sendEmail",
+            type:"post",
+            data:{"email":email},
+            dataType:"json",//返回的数据类型
+            success:function (data) {
+                $("#info2").text(data.info);
+            }
+        })
+    }
+
+    //邮箱登录
+    function emailLogin() {
+        //获取用户输入
+        var code = $("#code").val()
+        //发送ajax请求
+        $.ajax({
+            url:"/login/emailLogin",
+            type:"post",
+            data:{"code":code},
+            dataType:"json",//返回的数据类型
+            success:function (data) {
+                $("#info2").text(data.info);
+            }
+        })
+    }
+
+</script>

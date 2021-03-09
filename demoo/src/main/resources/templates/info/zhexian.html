@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>折线图</title>
+    <script src="/js/jquery-3.2.1.min.js"></script>
+    <script src="/js/echarts.min.js"></script>
+</head>
+<body>
+<div style="position: absolute;left: 40%;">
+    <select id="tu" style="width: 120px;height: 25px">
+        <option value="0">折线</option>
+        <option value="1">柱状</option>
+    </select>
+    <select id="province" style="width: 120px;height: 25px" ></select>
+    <button type="button" onclick="zhexian()">查询</button>
+</div>
+
+<!--创建一个容器-->
+<div id="main" style="position: absolute;top:50px;width: 100%;height: 100%";></div>
+</body>
+</html>
+<script>
+    //定义jquery文档加载事件
+    $(function () {
+        loadProvince();
+    })
+    //查询时间
+    function loadProvince() {
+        $.ajax({
+            url:"/info/province",
+            type:"get",
+            dataType:"json",
+            success:function(data){
+                //创建拼接字符串的变量
+                var html = ""
+                //遍历服务器传来的集合数据，json数据
+                for(var i=0;i<data.length;i++){
+                    html+="<option value= '"+data[i].provinceName+"' >"+data[i].provinceName+"</option>"
+                }
+                //拼接的字符串加载到下拉框
+                $("#province").html(html)
+                zhexian();
+            }
+        })
+    }
+    function zhexian() {
+        var provinceName = $("#province").val();
+        var tu = $("#tu").val();
+        $.ajax({
+            url:"/info/zhexianAjax",
+            type:"get",
+            data:{"provinceName":provinceName},
+            dataType:"json",
+            success:function (data) {
+                console.log("#######"+data.info)
+                // 基于准备好的dom，初始化echarts实例
+                var myChart = echarts.init(document.getElementById('main'));
+
+                // 指定图表的配置项和数据
+                var option = {
+                    title: {
+                        text: '各省疫情折线图'
+                    },
+                    tooltip: {
+                        trigger: 'axis'
+                    },
+                    legend: {
+                        data: ['确诊人数', '治愈人数', '死亡人数']
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '3%',
+                        containLabel: true
+                    },
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: true,
+                        data: data.time
+                    },
+                    yAxis: {
+                        type: 'value'
+                    },
+                    series: [
+                        {
+                            name: '确诊人数',
+                            type: 'line',
+                            data: data.confirmCount
+                        },
+                        {
+                            name: '治愈人数',
+                            type: 'line',
+                            data: data.curedCount
+                        },
+                        {
+                            name: '死亡人数',
+                            type: 'line',
+                            data: data.deadCount
+                        }
+                    ]
+                };
+                if(tu=='0'){
+                    option.series[1].type='line'
+                }else{
+                    option.series[1].type='bar'
+                }
+                // 使用刚指定的配置项和数据显示图表。
+                myChart.setOption(option);
+            }
+        })
+
+    }
+</script>
